@@ -1,0 +1,57 @@
+import streamlit as st
+import pandas as pd
+from datetime import date
+
+# Page Config (Mobile friendly)
+st.set_page_config(page_title="Fitness Level Up", page_icon="🏆")
+
+# Title and Profile
+st.title("🏆 Level-Up Fitness")
+user_name = st.sidebar.text_input("Player Name", "Champion")
+
+# --- DATA HANDLING ---
+# Streamlit Cloud par data permanent save karne ke liye hum 'session_state' 
+# ya CSV ka use karte hain. 
+if 'fitness_data' not in st.session_state:
+    st.session_state.fitness_data = pd.DataFrame(columns=["Date", "KM", "Pushups", "XP"])
+
+df = st.session_state.fitness_data
+total_xp = df['XP'].sum()
+
+# --- LEVEL LOGIC ---
+def get_status(xp):
+    if xp < 500: return 1, "Road Runner 👟", 500
+    elif xp < 2000: return 2, "Stamina King ⚡", 2000
+    elif xp < 5000: return 3, "Iron Man 💪", 5000
+    else: return 4, "Legend 👑", 10000
+
+level, badge, next_goal = get_status(total_xp)
+
+# --- UI DISPLAY ---
+st.metric(label="Current Level", value=f"Lvl {level}")
+st.subheader(f"Rank: {badge}")
+
+# Progress Bar
+progress = min(total_xp / next_goal, 1.0)
+st.progress(progress)
+st.write(f"✨ {total_xp} / {next_goal} XP to next Level")
+
+st.divider()
+
+# --- INPUT SECTION ---
+st.header("Today's Quest")
+col1, col2 = st.columns(2)
+with col1:
+    km = st.number_input("Running (KM)", min_value=0.0, step=0.1)
+with col2:
+    pushups = st.number_input("Pushups", min_value=0, step=1)
+
+if st.button("Complete Workout & Save"):
+    new_xp = (km * 50) + (pushups * 2)
+    new_row = {"Date": date.today(), "KM": km, "Pushups": pushups, "XP": new_xp}
+    st.session_state.fitness_data = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    st.success(f"Gajab! +{new_xp} XP earned!")
+    st.balloons()
+
+# --- HISTORY ---
+if st.checkbox("Show 2-
